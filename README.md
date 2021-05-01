@@ -160,6 +160,19 @@ You can also set logging on or off during runtime with methods. Note that
 if you don't specify a logging directory in the config or at runtime, then
 no logs will be created. There must be a valid target location.
 
+You can take full control of logging by providing your own custom logger object
+which implements the provided `NetSuite\LoggerInterface`.
+
+The first method is by defining the `logger` configuration key 
+(`NETSUITE_LOGGER` if loading from `.env`). The value of this key should be
+the class you want to be used instead of the default `NetSuite\Logger` 
+implementation. When the library needs to log a request and has to create one
+on the fly, this class will be used.
+
+The second option is to instantiate your custom logger manually and then
+pass it into the client using the `setLogger` method after instantiating the
+client. Using this method, it isn't required to also set the `logger` option.
+
 ```php
 // Set a logging path
 $service->setLogPath('/path/to/logs');
@@ -170,8 +183,9 @@ $service->logRequests(true);  // Turn logging on.
 // Turn logging off
 $service->logRequests(false); // Turn logging off.
 
-// Use a custom logger - Use Logger.php as sample
-$service->setLogger('MyLogger', '/path/to/logs');
+// Or bring your own logger that implements LoggerInterface
+$logger = new MyCustomLoggerClass('/custom/log/path');
+$service->setLogger($logger);
 ```
 
 ## Generating Classes

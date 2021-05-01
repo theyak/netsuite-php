@@ -42,7 +42,7 @@ class NetSuiteClient
      */
     private $soapHeaders = [];
     /**
-     * @var \NetSuite\Logger
+     * @var \NetSuite\LoggerInterface
      */
     private $logger;
 
@@ -63,14 +63,9 @@ class NetSuiteClient
         if (isset($client)) {
           $this->client = $client;
         }
-
         if (!isset($this->config['logger'])) {
-            $this->config['logger'] = 'NetSuite\\Logger';
+            $this->config['logger'] = Logger::class;
         }
-        $this->logger = new $this->config['logger'](
-            isset($this->config['log_path']) ? $this->config['log_path'] : NULL
-        );
-
     }
 
     /**
@@ -98,7 +93,7 @@ class NetSuiteClient
     public static function getEnvConfig()
     {
         $config = [
-            'endpoint'           => getenv('NETSUITE_ENDPOINT') ?: '2021_1',
+            'endpoint'           => getenv('NETSUITE_ENDPOINT') ?: '2020_0',
             'host'               => getenv('NETSUITE_HOST') ?: 'https://webservices.sandbox.netsuite.com',
             'email'              => getenv('NETSUITE_EMAIL'),
             'password'           => getenv('NETSUITE_PASSWORD'),
@@ -107,6 +102,7 @@ class NetSuiteClient
             'app_id'             => getenv('NETSUITE_APP_ID') ?: '4AD027CA-88B3-46EC-9D3E-41C6E6A325E2',
             'logging'            => getenv('NETSUITE_LOGGING'),
             'log_path'           => getenv('NETSUITE_LOG_PATH'),
+            'logger'             => getenv('NETSUITE_LOGGER') ?: null,
         ];
 
         // These config keys aren't required by all users, but if they are
@@ -417,14 +413,31 @@ class NetSuiteClient
     }
 
     /**
-     * Set a custom logger
+     * Set a custom logger.
      * 
-     * @param string $logger Name of class
-     * @param string $logPath
+     * @param \NetSuite\LoggerInterface $logger A logger object
      */
-    public function setLogger($logger, $logPath) {
-        $this->config['log_path'] = $logPath;
-        $this->logger = new $this->config['logger']($logPath);
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * Return a reference to the logger object. If none has been created
+     * already, then instantiate an object of whatever class is defined
+     * in the config.
+     *
+     * @return \NetSuite\LoggerInterface
+     */
+    public function getLogger(): LoggerInterface
+    {
+        if (!$this->logger) {
+            $this->setLogger(new $this->config['logger'](
+                isset($this->config['log_path']) ? $this->config['log_path'] : null
+            ));
+        }
+
+        return $this->logger;
     }
 
     /**
@@ -434,8 +447,7 @@ class NetSuiteClient
      */
     public function setLogPath($logPath)
     {
-        $this->config['log_path'] = $logPath;
-        $this->logger = new $this->config['logger']($logPath);
+        $this->getLogger()->setLogPath($logPath);
     }
 
     /**
@@ -446,7 +458,7 @@ class NetSuiteClient
     private function logSoapCall($operation)
     {
         if (isset($this->config['logging']) && $this->config['logging']) {
-            $this->logger->logSoapCall($this->getClient(), $operation);
+            $this->getLogger()->logSoapCall($this->getClient(), $operation);
         }
     }
 

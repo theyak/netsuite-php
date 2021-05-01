@@ -2,7 +2,7 @@
 
 namespace NetSuite;
 
-class Logger
+class Logger implements LoggerInterface
 {
     private $path;
 
@@ -12,12 +12,23 @@ class Logger
     }
 
     /**
+     * Set the log file directory on this object.
+     *
+     * @param string $logPath
+     * @return void
+     */
+    public function setLogPath(string $logPath): void
+    {
+        $this->path = $logPath;
+    }
+
+    /**
      * Log the last soap call as request and response XML files.
      *
      * @param \SoapClient $client
      * @param string $operation
      */
-    public function logSoapCall($client, $operation)
+    public function logSoapCall(\SoapClient $client, string $operation): void
     {
         if (file_exists($this->path)) {
             $fileName = "ryanwinchester-netsuite-php-" . date("Ymd.His") . "-" . $operation;
